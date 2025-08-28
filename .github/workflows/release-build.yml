@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
@@ -18,9 +17,9 @@ jobs:
           - os: windows
             arch: x64
           - os: windows
-            arch: arm64
-          - os: windows
             arch: ia32
+          - os: windows
+            arch: arm64
 
           # Linux
           - os: linux
@@ -38,6 +37,8 @@ jobs:
           - os: android
             arch: arm64
 
+    runs-on: ${{ matrix.os == 'windows' && 'windows-latest' || matrix.os == 'macos' && 'macos-latest' || 'ubuntu-latest' }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -52,33 +53,45 @@ jobs:
           DIR=dist/${{ matrix.os }}-${{ matrix.arch }}
           mkdir -p $DIR
 
+          # Set GOOS and GOARCH
           if [[ "${{ matrix.os }}" == "windows" ]]; then
             EXT=".exe"
             GOOS=windows
-            if [[ "${{ matrix.arch }}" == "x64" ]]; then GOARCH=amd64; fi
-            if [[ "${{ matrix.arch }}" == "ia32" ]]; then GOARCH=386; fi
-            if [[ "${{ matrix.arch }}" == "arm64" ]]; then GOARCH=arm64; fi
+            case "${{ matrix.arch }}" in
+              x64) GOARCH=amd64 ;;
+              ia32) GOARCH=386 ;;
+              arm64) GOARCH=arm64 ;;
+            esac
           elif [[ "${{ matrix.os }}" == "macos" ]]; then
             EXT=""
             GOOS=darwin
-            if [[ "${{ matrix.arch }}" == "x64" ]]; then GOARCH=amd64; fi
-            if [[ "${{ matrix.arch }}" == "arm64" ]]; then GOARCH=arm64; fi
+            case "${{ matrix.arch }}" in
+              x64) GOARCH=amd64 ;;
+              arm64) GOARCH=arm64 ;;
+            esac
           elif [[ "${{ matrix.os }}" == "linux" ]]; then
             EXT=""
             GOOS=linux
-            if [[ "${{ matrix.arch }}" == "x64" ]]; then GOARCH=amd64; fi
-            if [[ "${{ matrix.arch }}" == "arm64" ]]; then GOARCH=arm64; fi
+            case "${{ matrix.arch }}" in
+              x64) GOARCH=amd64 ;;
+              arm64) GOARCH=arm64 ;;
+            esac
           elif [[ "${{ matrix.os }}" == "android" ]]; then
             EXT=".zip"
             GOOS=android
-            if [[ "${{ matrix.arch }}" == "arm64" ]]; then GOARCH=arm64; fi
+            GOARCH=arm64
           fi
+
+          echo "Building for GOOS=$GOOS GOARCH=$GOARCH"
 
           go build -o $DIR/$OUTPUT_NAME$EXT main.go
 
-          zip -j $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip $DIR/$OUTPUT_NAME$EXT
-
-          rm $DIR/$OUTPUT_NAME$EXT
+          # Create zip only if not already zip
+          if [[ "$EXT" != ".zip" ]]; then
+            zip -j $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip $DIR/$OUTPUT_NAME$EXT
+          else
+            cp $DIR/$OUTPUT_NAME$EXT $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
