@@ -48,22 +48,30 @@ jobs:
           go-version: "1.21"
 
       - name: Build
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $env:GOOS="windows"
+          switch ($env:MATRIX_ARCH) {
+            "x64" { $env:GOARCH="amd64" }
+            "ia32" { $env:GOARCH="386" }
+            "arm64" { $env:GOARCH="arm64" }
+          }
+          $OutputName="masque-plus.exe"
+          $Dir="dist/windows-$($env:MATRIX_ARCH)"
+          New-Item -ItemType Directory -Force -Path $Dir
+          go build -o "$Dir\$OutputName" main.go
+          Compress-Archive -Path "$Dir\$OutputName" -DestinationPath "$Dir\masque-plus-windows-$($env:MATRIX_ARCH).zip"
+
+      - name: Build
+        if: matrix.os != 'windows'
         shell: bash
         run: |
           OUTPUT_NAME=masque-plus
           DIR=dist/${{ matrix.os }}-${{ matrix.arch }}
           mkdir -p $DIR
 
-          # Set GOOS and GOARCH
-          if [[ "${{ matrix.os }}" == "windows" ]]; then
-            EXT=".exe"
-            GOOS=windows
-            case "${{ matrix.arch }}" in
-              x64) GOARCH=amd64 ;;
-              ia32) GOARCH=386 ;;
-              arm64) GOARCH=arm64 ;;
-            esac
-          elif [[ "${{ matrix.os }}" == "macos" ]]; then
+          if [[ "${{ matrix.os }}" == "macos" ]]; then
             EXT=""
             GOOS=darwin
             case "${{ matrix.arch }}" in
@@ -86,8 +94,6 @@ jobs:
           echo "Building for GOOS=$GOOS GOARCH=$GOARCH"
 
           go build -o $DIR/$OUTPUT_NAME$EXT main.go
-
-          # Create zip only if not already zip
           if [[ "$EXT" != ".zip" ]]; then
             zip -j $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip $DIR/$OUTPUT_NAME$EXT
           else
