@@ -9,35 +9,14 @@ on:
       - "v*"
 
 jobs:
-  build:
+  # ------------------------------
+  # Windows builds (PowerShell)
+  # ------------------------------
+  build-windows:
+    runs-on: windows-latest
     strategy:
       matrix:
-        include:
-          # Windows
-          - os: windows
-            arch: x64
-          - os: windows
-            arch: ia32
-          - os: windows
-            arch: arm64
-
-          # Linux
-          - os: linux
-            arch: x64
-          - os: linux
-            arch: arm64
-
-          # macOS
-          - os: macos
-            arch: x64
-          - os: macos
-            arch: arm64
-
-          # Android
-          - os: android
-            arch: arm64
-
-    runs-on: ${{ matrix.os == 'windows' && 'windows-latest' || matrix.os == 'macos' && 'macos-latest' || 'ubuntu-latest' }}
+        arch: [x64, ia32, arm64]
 
     steps:
       - uses: actions/checkout@v3
@@ -47,8 +26,7 @@ jobs:
         with:
           go-version: "1.21"
 
-      - name: Build on Windows
-        if: matrix.os == 'windows'
+      - name: Build Windows executable
         shell: pwsh
         run: |
           $env:GOOS="windows"
@@ -57,15 +35,41 @@ jobs:
             "ia32" { $env:GOARCH="386" }
             "arm64" { $env:GOARCH="arm64" }
           }
+
           $Dir = "dist/windows-$($env:MATRIX_ARCH)"
           New-Item -ItemType Directory -Force -Path $Dir
+
           $OutputName = "masque-plus.exe"
           go build -o "$Dir\$OutputName" main.go
+
           $ZipName = "masque-plus-windows-$($env:MATRIX_ARCH).zip"
           Compress-Archive -Path "$Dir\$OutputName" -DestinationPath "$Dir\$ZipName"
 
-      - name: Build on non-Windows
-        if: matrix.os != 'windows'
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: masque-plus-windows-${{ matrix.arch }}
+          path: dist/windows-${{ matrix.arch }}/*.zip
+
+  # ------------------------------
+  # Linux/macOS/Android builds (Bash)
+  # ------------------------------
+  build-unix:
+    runs-on: ${{ matrix.os == 'macos' && 'macos-latest' || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        os: [linux, macos, android]
+        arch: [x64, arm64]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Build
         shell: bash
         run: |
           OUTPUT_NAME=masque-plus
@@ -75,17 +79,11 @@ jobs:
           if [[ "${{ matrix.os }}" == "macos" ]]; then
             EXT=""
             GOOS=darwin
-            case "${{ matrix.arch }}" in
-              x64) GOARCH=amd64 ;;
-              arm64) GOARCH=arm64 ;;
-            esac
+            [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
           elif [[ "${{ matrix.os }}" == "linux" ]]; then
             EXT=""
             GOOS=linux
-            case "${{ matrix.arch }}" in
-              x64) GOARCH=amd64 ;;
-              arm64) GOARCH=arm64 ;;
-            esac
+            [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
           elif [[ "${{ matrix.os }}" == "android" ]]; then
             EXT=".zip"
             GOOS=android
@@ -102,15 +100,19 @@ jobs:
             cp $DIR/$OUTPUT_NAME$EXT $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip
           fi
 
-      - name: Upload all build artifacts
+      - name: Upload Unix artifact
         uses: actions/upload-artifact@v4
         with:
           name: masque-plus-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/${{ matrix.os }}-${{ matrix.arch }}/*.zip
 
+  # ------------------------------
+  # Release job
+  # ------------------------------
   release:
-    needs: build
+    needs: [build-windows, build-unix]
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
 
