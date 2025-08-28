@@ -1,4 +1,4 @@
-# Masque-Pus
+# Masque-Plus
 
 A simple Go launcher for `usque` that handles registration, configuration, and running a SOCKS proxy.
 Designed for **Cloudflare MASQUE protocol** usage.
@@ -17,12 +17,12 @@ Cross-platform: works on **Linux, macOS, and Windows**. The binaries are automat
 
 Download the latest release for your system architecture from the [Releases page](https://github.com/ircfspace/masque-plus/releases/latest).
 
-Place the `usque` binary in the same folder as this launcher (`Masque-Pus.exe` for Windows, or `Masque-Pus` for Linux/macOS).
+Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` for Windows, or `Masque-Plus` for Linux/macOS).
 
 ## Usage
 
 ```bash
-./Masque-Pus --endpoint <IP> [--bind <IP:Port>] [--renew]
+./Masque-Plus --endpoint <IP> [--bind <IP:Port>] [--renew]
 ```
 
 ### Flags
@@ -37,13 +37,13 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Pus.exe` f
 
 ```bash
 # Connect to MASQUE server at 162.159.198.2 and start a SOCKS proxy on default 127.0.0.1:8086
-./Masque-Pus --endpoint 162.159.198.2
+./Masque-Plus --endpoint 162.159.198.2
 
 # Bind SOCKS proxy to custom IP and port
-./Masque-Pus --endpoint 162.159.198.2 --bind 127.0.0.1:8086
+./Masque-Plus --endpoint 162.159.198.2 --bind 127.0.0.1:8086
 
 # Force configuration renewal
-./Masque-Pus --endpoint 162.159.198.2 --renew
+./Masque-Plus --endpoint 162.159.198.2 --renew
 ```
 
 ## Notes
