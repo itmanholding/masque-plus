@@ -19,7 +19,7 @@ jobs:
         arch: [x64, ia32, arm64]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -28,21 +28,26 @@ jobs:
 
       - name: Build Windows executable
         shell: pwsh
+        env:
+          ARCH: ${{ matrix.arch }}
         run: |
-          $env:GOOS="windows"
-          switch ($env:MATRIX_ARCH) {
-            "x64" { $env:GOARCH="amd64" }
-            "ia32" { $env:GOARCH="386" }
-            "arm64" { $env:GOARCH="arm64" }
+          $Arch = $env:ARCH
+
+          $env:GOOS = 'windows'
+          switch ($Arch) {
+            'x64'  { $env:GOARCH = 'amd64' }
+            'ia32' { $env:GOARCH = '386' }
+            'arm64'{ $env:GOARCH = 'arm64' }
+            default { throw "Unknown ARCH: $Arch" }
           }
 
-          $Dir = "dist/windows-$($env:MATRIX_ARCH)"
-          New-Item -ItemType Directory -Force -Path $Dir
+          $Dir = "dist/windows-$Arch"
+          New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 
-          $OutputName = "masque-plus.exe"
+          $OutputName = 'masque-plus.exe'
           go build -o "$Dir\$OutputName" main.go
 
-          $ZipName = "masque-plus-windows-$($env:MATRIX_ARCH).zip"
+          $ZipName = "masque-plus-windows-$Arch.zip"
           Compress-Archive -Path "$Dir\$OutputName" -DestinationPath "$Dir\$ZipName"
 
       - name: Upload Windows artifact
@@ -62,7 +67,7 @@ jobs:
         arch: [x64, arm64]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v4
@@ -72,33 +77,32 @@ jobs:
       - name: Build
         shell: bash
         run: |
+          set -euo pipefail
+
           OUTPUT_NAME=masque-plus
-          DIR=dist/${{ matrix.os }}-${{ matrix.arch }}
-          mkdir -p $DIR
+          DIR="dist/${{ matrix.os }}-${{ matrix.arch }}"
+          mkdir -p "$DIR"
 
           if [[ "${{ matrix.os }}" == "macos" ]]; then
-            EXT=""
             GOOS=darwin
             [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
           elif [[ "${{ matrix.os }}" == "linux" ]]; then
-            EXT=""
             GOOS=linux
             [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
           elif [[ "${{ matrix.os }}" == "android" ]]; then
-            EXT=".zip"
             GOOS=android
+            #
             GOARCH=arm64
+          else
+            echo "Unknown OS: ${{ matrix.os }}"; exit 1
           fi
 
           echo "Building for GOOS=$GOOS GOARCH=$GOARCH"
+          GOOS=$GOOS GOARCH=$GOARCH go build -o "$DIR/$OUTPUT_NAME" main.go
 
-          go build -o $DIR/$OUTPUT_NAME$EXT main.go
-
-          if [[ "$EXT" != ".zip" ]]; then
-            zip -j $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip $DIR/$OUTPUT_NAME$EXT
-          else
-            cp $DIR/$OUTPUT_NAME$EXT $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip
-          fi
+          #
+          ZIP_NAME="$DIR/${OUTPUT_NAME}-${{ matrix.os }}-${{ matrix.arch }}.zip"
+          (cd "$DIR" && zip -j "$(basename "$ZIP_NAME")" "$OUTPUT_NAME")
 
       - name: Upload Unix artifact
         uses: actions/upload-artifact@v4
@@ -114,17 +118,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist
 
+      - name: List downloaded files (debug)
+        run: ls -R dist
+
       - name: Create Draft Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/**/*-*-*.zip
+          #
+          files: dist/**/*.zip
           draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
