@@ -49,13 +49,10 @@ jobs:
             if [[ "${{ matrix.arch }}" == "arm64" ]]; then GOARCH=arm64; fi
           fi
 
-          # Build binary
           go build -o $DIR/$OUTPUT_NAME$EXT main.go
 
-          # Zip با نام OS-ARCH
           zip -j $DIR/$OUTPUT_NAME-${{ matrix.os }}-${{ matrix.arch }}.zip $DIR/$OUTPUT_NAME$EXT
 
-          # حذف فایل اصلی exe/bin تا فایل اضافی نماند
           rm $DIR/$OUTPUT_NAME$EXT
 
       - name: Upload build artifact
@@ -78,7 +75,6 @@ jobs:
       - name: Create Draft Release
         uses: softprops/action-gh-release@v1
         with:
-          # فقط zipهای OS-ARCH آپلود میشن
           files: dist/**/*-*-*.zip
           draft: true
         env:
