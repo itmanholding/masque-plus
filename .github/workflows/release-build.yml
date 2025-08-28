@@ -1,5 +1,8 @@
 name: Build and Release Masque-Plus
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:
