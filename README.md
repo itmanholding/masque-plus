@@ -36,14 +36,14 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 ### Example
 
 ```bash
-# Connect to MASQUE server at 162.159.198.2 and start a SOCKS proxy on default 127.0.0.1:8086
-./Masque-Plus --endpoint 162.159.198.2
+# Connect to MASQUE server at 162.159.198.2:443 and start a SOCKS proxy on default 127.0.0.1:8086
+./Masque-Plus --endpoint 162.159.198.2:443
 
 # Bind SOCKS proxy to custom IP and port
-./Masque-Plus --endpoint 162.159.198.2 --bind 127.0.0.1:8086
+./Masque-Plus --endpoint 162.159.198.2:443 --bind 127.0.0.1:8086
 
 # Force configuration renewal
-./Masque-Plus --endpoint 162.159.198.2 --renew
+./Masque-Plus --endpoint 162.159.198.2:443 --renew
 ```
 
 ## Notes
