@@ -19,10 +19,15 @@ jobs:
         include:
           - os: windows
             arch: amd64
+          - os: windows
+            arch: arm64
           - os: linux
             arch: amd64
           - os: linux
             arch: arm64
+          - os: linux
+            arch: arm
+            goarm: "7"
           - os: darwin
             arch: amd64
           - os: darwin
@@ -66,21 +71,36 @@ jobs:
           if [ "${{ matrix.os }}" = "windows" ]; then
             GOOS=windows GOARCH=${{ matrix.arch }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
           else
-            GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+            if [ "${{ matrix.arch }}" = "arm" ] && [ -n "${{ matrix.goarm || '' }}" ]; then
+              GOOS=${{ matrix.os }} GOARCH=arm GOARM=${{ matrix.goarm }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+            else
+              GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+            fi
           fi
 
       - name: Bundle usque binary into package
         run: |
           cp build/vendor/usque/${{ matrix.os }}_${{ matrix.arch }}/* build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
 
-      - name: Create zip per target (flat layout)
+      - name: Create flat zip per target
         run: |
           mkdir -p build/out
           cd build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
           zip -r ../../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip .
 
-      - name: Upload artifact
+      - name: Upload as artifact (CI only)
         uses: actions/upload-artifact@v4
         with:
           name: masque-plus-${{ matrix.os }}_${{ matrix.arch }}
           path: build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip
+
+      - name: Upload to GitHub Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release create "${TAG}" --title "${TAG}" --notes "Automated release for ${TAG}"
+          fi
+          gh release upload "${TAG}" "build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip" --clobber
