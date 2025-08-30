@@ -31,10 +31,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
       - name: Setup tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip tar jq
+          sudo apt-get install -y zip unzip tar
           YQ_VERSION=v4.44.3
           curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
           chmod +x /usr/local/bin/yq
@@ -47,30 +52,32 @@ jobs:
           fi
           chmod +x scripts/fetch_usque.sh
 
-      - name: Read version
-        id: v
-        run: echo "ver=$(yq -r '.version' usque.yaml)" >> "$GITHUB_OUTPUT"
-
       - name: Fetch usque
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}"
 
-      - name: Build project artifacts
+      - name: Build project
+        env:
+          CGO_ENABLED: 0
         run: |
           mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
-          echo "${{ steps.v.outputs.ver }}" > build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/USQUE_VERSION.txt
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            GOOS=windows GOARCH=${{ matrix.arch }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
+          else
+            GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+          fi
 
       - name: Bundle usque binary into package
         run: |
           cp build/vendor/usque/${{ matrix.os }}_${{ matrix.arch }}/* build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
 
-      - name: Create zip per target
+      - name: Create zip per target (flat layout)
         run: |
           mkdir -p build/out
-          cd build/masque-plus
-          zip -r ../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip ${{ matrix.os }}_${{ matrix.arch }}
+          cd build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
+          zip -r ../../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
