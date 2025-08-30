@@ -2,8 +2,6 @@ name: Build masque-plus
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -87,67 +85,67 @@ jobs:
             windows_amd64)
               CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }}.exe .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
               ;;
             windows_arm64)
               CGO_ENABLED=0 GOOS=windows GOARCH=arm64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }}.exe .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
               ;;
             darwin_amd64)
               CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             darwin_arm64)
               CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_amd64)
               CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_arm64)
               CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_armv5)
               CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_armv6)
               CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_armv7)
               CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_mips)
               CGO_ENABLED=0 GOOS=linux GOARCH=mips \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_mipsle)
               CGO_ENABLED=0 GOOS=linux GOARCH=mipsle \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_mips64)
               CGO_ENABLED=0 GOOS=linux GOARCH=mips64 \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             linux_mips64le)
               CGO_ENABLED=0 GOOS=linux GOARCH=mips64le \
               go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
               ;;
             *)
               echo "unsupported target: ${{ matrix.os }}_${{ matrix.arch }}"; exit 1
@@ -169,15 +167,7 @@ jobs:
           cd build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
           zip -r ../../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip .
 
-      - name: Upload folder as CI artifact (no nested zip)
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: masque-plus-${{ matrix.os }}_${{ matrix.arch }}
-          path: build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
-
       - name: Upload to GitHub Draft Release on tag
-        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
