@@ -54,6 +54,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "stable"
+          cache: true
 
       - name: Setup tools
         run: |
@@ -77,35 +78,81 @@ jobs:
         run: |
           bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}"
 
-      - name: Build project
+      - name: Build project (skip for android)
         if: ${{ matrix.os != 'android' }}
-        env:
-          CGO_ENABLED: 0
         run: |
           mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
 
-          set_go_envs() {
-            case "${{ matrix.arch }}" in
-              amd64)    echo "GOOS=${{ matrix.os }} GOARCH=amd64" ;;
-              arm64)    echo "GOOS=${{ matrix.os }} GOARCH=arm64" ;;
-              armv5)    echo "GOOS=${{ matrix.os }} GOARCH=arm GOARM=5" ;;
-              armv6)    echo "GOOS=${{ matrix.os }} GOARCH=arm GOARM=6" ;;
-              armv7)    echo "GOOS=${{ matrix.os }} GOARCH=arm GOARM=7" ;;
-              mips)     echo "GOOS=${{ matrix.os }} GOARCH=mips" ;;
-              mipsle)   echo "GOOS=${{ matrix.os }} GOARCH=mipsle" ;;
-              mips64)   echo "GOOS=${{ matrix.os }} GOARCH=mips64" ;;
-              mips64le) echo "GOOS=${{ matrix.os }} GOARCH=mips64le" ;;
-              *) echo "unsupported arch: ${{ matrix.arch }}"; exit 1 ;;
-            esac
-          }
-
-          eval "$(set_go_envs)"
-
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
-          else
-            go build -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-          fi
+          case "${{ matrix.os }}_${{ matrix.arch }}" in
+            windows_amd64)
+              CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }}.exe .
+              ;;
+            windows_arm64)
+              CGO_ENABLED=0 GOOS=windows GOARCH=arm64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }}.exe .
+              ;;
+            darwin_amd64)
+              CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            darwin_arm64)
+              CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_amd64)
+              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_arm64)
+              CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_armv5)
+              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_armv6)
+              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_armv7)
+              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_mips)
+              CGO_ENABLED=0 GOOS=linux GOARCH=mips \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_mipsle)
+              CGO_ENABLED=0 GOOS=linux GOARCH=mipsle \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_mips64)
+              CGO_ENABLED=0 GOOS=linux GOARCH=mips64 \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            linux_mips64le)
+              CGO_ENABLED=0 GOOS=linux GOARCH=mips64le \
+              go build -trimpath -ldflags="-s -w" \
+              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus_${{ matrix.os }}_${{ matrix.arch }} .
+              ;;
+            *)
+              echo "unsupported target: ${{ matrix.os }}_${{ matrix.arch }}"; exit 1
+              ;;
+          esac
 
       - name: Prepare package directory (android)
         if: ${{ matrix.os == 'android' }}
