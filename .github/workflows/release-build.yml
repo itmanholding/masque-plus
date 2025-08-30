@@ -1,138 +1,84 @@
-name: Build and Release Masque-Plus
-
-permissions:
-  contents: write
+name: Build masque-plus
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
-  # ------------------------------
-  # Windows builds (PowerShell)
-  # ------------------------------
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: [x64, ia32, arm64]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
-
-      - name: Build Windows executable
-        shell: pwsh
-        env:
-          ARCH: ${{ matrix.arch }}
-        run: |
-          $Arch = $env:ARCH
-
-          $env:GOOS = 'windows'
-          switch ($Arch) {
-            'x64'  { $env:GOARCH = 'amd64' }
-            'ia32' { $env:GOARCH = '386' }
-            'arm64'{ $env:GOARCH = 'arm64' }
-            default { throw "Unknown ARCH: $Arch" }
-          }
-
-          $Dir = "dist/windows-$Arch"
-          New-Item -ItemType Directory -Force -Path $Dir | Out-Null
-
-          $OutputName = 'masque-plus.exe'
-          go build -o "$Dir\$OutputName" main.go
-
-          $ZipName = "masque-plus-windows-$Arch.zip"
-          Compress-Archive -Path "$Dir\$OutputName" -DestinationPath "$Dir\$ZipName"
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: masque-plus-windows-${{ matrix.arch }}
-          path: dist/windows-${{ matrix.arch }}/*.zip
-
-  # ------------------------------
-  # Linux/macOS/Android builds (Bash)
-  # ------------------------------
-  build-unix:
-    runs-on: ${{ matrix.os == 'macos' && 'macos-latest' || 'ubuntu-latest' }}
-    strategy:
-      matrix:
-        os: [linux, macos, android]
-        arch: [x64, arm64]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
-
-      - name: Build
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          OUTPUT_NAME=masque-plus
-          DIR="dist/${{ matrix.os }}-${{ matrix.arch }}"
-          mkdir -p "$DIR"
-
-          if [[ "${{ matrix.os }}" == "macos" ]]; then
-            GOOS=darwin
-            [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
-          elif [[ "${{ matrix.os }}" == "linux" ]]; then
-            GOOS=linux
-            [[ "${{ matrix.arch }}" == "x64" ]] && GOARCH=amd64 || GOARCH=arm64
-          elif [[ "${{ matrix.os }}" == "android" ]]; then
-            GOOS=android
-            #
-            GOARCH=arm64
-          else
-            echo "Unknown OS: ${{ matrix.os }}"; exit 1
-          fi
-
-          echo "Building for GOOS=$GOOS GOARCH=$GOARCH"
-          GOOS=$GOOS GOARCH=$GOARCH go build -o "$DIR/$OUTPUT_NAME" main.go
-
-          #
-          ZIP_NAME="$DIR/${OUTPUT_NAME}-${{ matrix.os }}-${{ matrix.arch }}.zip"
-          (cd "$DIR" && zip -j "$(basename "$ZIP_NAME")" "$OUTPUT_NAME")
-
-      - name: Upload Unix artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: masque-plus-${{ matrix.os }}-${{ matrix.arch }}
-          path: dist/${{ matrix.os }}-${{ matrix.arch }}/*.zip
-
-  # ------------------------------
-  # Release job
-  # ------------------------------
-  release:
-    needs: [build-windows, build-unix]
+  build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows
+            arch: amd64
+            ext: zip
+          - os: linux
+            arch: amd64
+            ext: tar.gz
+          - os: linux
+            arch: arm64
+            ext: tar.gz
+          - os: darwin
+            arch: amd64
+            ext: tar.gz
+          - os: darwin
+            arch: arm64
+            ext: tar.gz
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
+      - name: Setup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip tar
+          YQ_VERSION=v4.44.3
+          curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+          if ! command -v gh >/dev/null 2>&1; then
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt-get update
+            sudo apt-get install -y gh
+          fi
+          chmod +x scripts/fetch_usque.sh
 
-      - name: List downloaded files (debug)
-        run: ls -R dist
+      - name: Read version
+        id: v
+        run: echo "ver=$(yq -r '.version' usque.yaml)" >> "$GITHUB_OUTPUT"
 
-      - name: Create Draft Release
-        uses: softprops/action-gh-release@v1
-        with:
-          #
-          files: dist/**/*.zip
-          draft: true
+      - name: Fetch usque for target
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}" "${{ matrix.ext }}"
+
+      - name: Build project artifacts
+        run: |
+          mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
+          echo "${{ steps.v.outputs.ver }}" > build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/USQUE_VERSION.txt
+
+      - name: Bundle usque binary into package
+        run: |
+          cp build/vendor/usque/${{ matrix.os }}_${{ matrix.arch }}/* build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
+
+      - name: Create zip per target
+        run: |
+          mkdir -p build/out
+          cd build/masque-plus
+          zip -r ../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip ${{ matrix.os }}_${{ matrix.arch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: masque-plus-${{ matrix.os }}_${{ matrix.arch }}
+          path: build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip
