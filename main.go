@@ -47,6 +47,7 @@ func main() {
 
 	logMsg("INFO", `running in masque mode`, nil)
 	if *scan || strings.EqualFold(*endpoint, "engage.cloudflareclient.com:2408") {
+		logMsg("INFO", `scanner mode enabled`, nil)
 		chosen, err := pickDefaultEndpoint(*v6Flag)
 		if err != nil {
 			logMsg("ERROR", err.Error(), nil)
@@ -73,7 +74,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		logMsg("INFO", "config found, skipping registration...", nil)
+		logMsg("INFO", "successfully loaded masque identity", nil)
 	}
 
 	cfg := make(map[string]interface{})
@@ -244,7 +245,7 @@ func handleScanner(scan *bufio.Scanner, bind string, st *procState) {
 		}
 
 		if strings.Contains(line, "no recent network activity") {
-			logMsg("ERROR", "context deadline exceeded", nil)
+			logMsg("ERROR", "connection test failed", nil)
 			continue
 		}
 
