@@ -5,6 +5,8 @@ Designed for **Cloudflare MASQUE protocol** usage.
 
 Cross-platform: works on **Linux, macOS, Windows, and Android**. The binaries are automatically built via **GitHub Actions**.
 
+![masque-plus](masque-plus.jpg)
+
 ## Features
 
 - Automatically registers `usque` if config is missing or renewal is requested.
