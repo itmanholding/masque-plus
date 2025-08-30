@@ -29,11 +29,14 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 
 ### Flags
 
-| Flag         | Description                                                               | Default          |
-| ------------ | ------------------------------------------------------------------------- | ---------------- |
-| `--endpoint` | **Required**. The MASQUE server endpoint to connect. Can be IPv4 or IPv6. | -                |
-| `--bind`     | IP and port to bind the local SOCKS proxy. Format: `IP:Port`.             | `127.0.0.1:8086` |
-| `--renew`    | Force renewal of the configuration even if `config.json` already exists.  | `false`          |
+| Flag         | Description                                                                                      | Default          |
+| ------------ | ------------------------------------------------------------------------------------------------ | ---------------- |
+| `--endpoint` | **Required** unless `--scan` is used. The MASQUE server endpoint to connect. Supports IPv4/IPv6. | -                |
+| `--bind`     | IP and port to bind the local SOCKS proxy. Format: `IP:Port`.                                    | `127.0.0.1:1080` |
+| `--renew`    | Force renewal of the configuration even if `config.json` already exists.                         | `false`          |
+| `-4`         | Force IPv4 endpoint selection (works with `--scan` or default endpoint).                         | -                |
+| `-6`         | Force IPv6 endpoint selection (works with `--scan` or default endpoint).                         | -                |
+| `--scan`     | Auto-select a default endpoint (`engage.cloudflareclient.com:2408`) instead of specifying one.   | `false`          |
 
 ### Example
 
@@ -46,6 +49,15 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 
 # Force configuration renewal
 ./Masque-Plus --endpoint 162.159.198.2:443 --renew
+
+# Auto-select a default endpoint (engage.cloudflareclient.com:2408)
+./Masque-Plus --scan
+
+# Auto-select default endpoint but force IPv4
+./Masque-Plus --scan -4
+
+# Auto-select default endpoint but force IPv6
+./Masque-Plus --scan -6
 ```
 
 ## TODO
