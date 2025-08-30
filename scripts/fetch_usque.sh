@@ -13,35 +13,35 @@ fi
 VERSION="$(yq -r '.version' usque.yaml)"
 TARGET_OS="${1:?TARGET_OS missing}"
 TARGET_ARCH="${2:?TARGET_ARCH missing}"
-ASSET_EXT="${3:?ASSET_EXT missing}"
 
-ASSET_NAME_ZIP="usque_${VERSION}_${TARGET_OS}_${TARGET_ARCH}.zip"
-ASSET_NAME_TGZ="usque_${VERSION}_${TARGET_OS}_${TARGET_ARCH}.tar.gz"
+ASSET_BASE="usque_${VERSION}_${TARGET_OS}_${TARGET_ARCH}"
 
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
-
 pushd "$WORKDIR" >/dev/null
 
-if [ "$ASSET_EXT" = "zip" ]; then
-  gh release download "v${VERSION}" --repo Diniboy1123/usque -p "$ASSET_NAME_ZIP"
-  ARCHIVE="$ASSET_NAME_ZIP"
-  mkdir extracted && unzip -q "$ARCHIVE" -d extracted
+ASSET_NAME="$(gh release view "v${VERSION}" --repo Diniboy1123/usque --json assets -q ".assets[].name" | grep -E "^${ASSET_BASE}\.(zip|tar\.gz)$" | head -n1 || true)"
+if [ -z "${ASSET_NAME}" ]; then
+  echo "no matching asset for ${ASSET_BASE}"
+  exit 1
+fi
+
+gh release download "v${VERSION}" --repo Diniboy1123/usque -p "${ASSET_NAME}"
+
+mkdir extracted
+if [[ "${ASSET_NAME}" == *.zip ]]; then
+  unzip -q "${ASSET_NAME}" -d extracted
 else
-  gh release download "v${VERSION}" --repo Diniboy1123/usque -p "$ASSET_NAME_TGZ"
-  ARCHIVE="$ASSET_NAME_TGZ"
-  mkdir extracted && tar -xzf "$ARCHIVE" -C extracted
+  tar -xzf "${ASSET_NAME}" -C extracted
 fi
 
 rm -f extracted/README.md extracted/License.md extracted/LICENSE.md extracted/readme.md || true
 
-BIN=""
-if [ "$TARGET_OS" = "windows" ]; then
+if [ "${TARGET_OS}" = "windows" ]; then
   BIN="$(find extracted -maxdepth 1 -type f -name 'usque*.exe' | head -n1 || true)"
 else
   BIN="$(find extracted -maxdepth 1 -type f -name 'usque*' ! -name '*.md' ! -name '*.txt' | head -n1 || true)"
 fi
-
 if [ -z "$BIN" ]; then
   echo "binary not found"
   exit 1

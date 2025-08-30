@@ -19,19 +19,14 @@ jobs:
         include:
           - os: windows
             arch: amd64
-            ext: zip
           - os: linux
             arch: amd64
-            ext: tar.gz
           - os: linux
             arch: arm64
-            ext: tar.gz
           - os: darwin
             arch: amd64
-            ext: tar.gz
           - os: darwin
             arch: arm64
-            ext: tar.gz
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +34,7 @@ jobs:
       - name: Setup tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip tar
+          sudo apt-get install -y zip unzip tar jq
           YQ_VERSION=v4.44.3
           curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
           chmod +x /usr/local/bin/yq
@@ -56,11 +51,11 @@ jobs:
         id: v
         run: echo "ver=$(yq -r '.version' usque.yaml)" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch usque for target
+      - name: Fetch usque
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}" "${{ matrix.ext }}"
+          bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}"
 
       - name: Build project artifacts
         run: |
