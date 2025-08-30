@@ -3,7 +3,7 @@
 A simple Go launcher for `usque` that handles registration, configuration, and running a SOCKS proxy.
 Designed for **Cloudflare MASQUE protocol** usage.
 
-Cross-platform: works on **Linux, macOS, and Windows**. The binaries are automatically built via **GitHub Actions**.
+Cross-platform: works on **Linux, macOS, Windows, and Android**. The binaries are automatically built via **GitHub Actions**.
 
 ## Features
 
@@ -11,7 +11,7 @@ Cross-platform: works on **Linux, macOS, and Windows**. The binaries are automat
 - Supports both **IPv4** and **IPv6** endpoints.
 - Starts a local SOCKS proxy on a specified IP and port.
 - Handles private key errors by re-registering automatically.
-- Cross-platform support for Linux, macOS, and Windows.
+- Cross-platform support for Linux, macOS, Windows, and Android.
 
 ## Installation
 
@@ -45,6 +45,10 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 # Force configuration renewal
 ./Masque-Plus --endpoint 162.159.198.2:443 --renew
 ```
+
+## TODO
+
+-[] Add an internal endpoint scanner to automatically search and suggest optimal MASQUE endpoints.
 
 ## Notes
 
