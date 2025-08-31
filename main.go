@@ -40,7 +40,16 @@ func main() {
 	v4Flag := flag.Bool("4", false, "Force IPv4 endpoint list (with --scan or engage.cloudflareclient.com:2408)")
 	v6Flag := flag.Bool("6", false, "Force IPv6 endpoint list (with --scan or engage.cloudflareclient.com:2408)")
 	connectTimeout := flag.Duration("connect-timeout", defaultConnectTimeout, "Timeout for initial connect (e.g. 15s, 1m, 15m); default 15m")
+	rtt := flag.Bool("rtt", false, "placeholder flag, not used")
+	reserved := flag.String("reserved", "", "placeholder flag, not used")
+	dns := flag.String("dns", "", "placeholder flag, not used")
+	testURL := flag.String("test-url", "", "placeholder flag, not used")
 	flag.Parse()
+
+	_ = rtt
+	_ = reserved
+	_ = dns
+	_ = testURL
 
 	if *v4Flag && *v6Flag {
 		logMsg("ERROR", "both -4 and -6 provided", nil)
