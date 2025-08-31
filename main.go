@@ -148,6 +148,7 @@ func pickDefaultEndpoint(v6 bool) (string, error) {
 func parseEndpoint(ep string) (net.IP, string, error) {
 	host, port, err := net.SplitHostPort(ep)
 	if err == nil {
+		host = strings.Trim(host, "[]")
 		ip := net.ParseIP(host)
 		if ip == nil {
 			return nil, "", fmt.Errorf("invalid IP in endpoint")
