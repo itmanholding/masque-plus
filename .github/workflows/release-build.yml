@@ -173,8 +173,10 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           if ! gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release create "${TAG}" --draft --title "${TAG}" --notes "Automated draft release for ${TAG}"
+            gh release create "${TAG}" --draft --title "${TAG}" \
+              --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
           else
-            gh release edit "${TAG}" --draft
+            gh release edit "${TAG}" --draft \
+              --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
           fi
           gh release upload "${TAG}" "build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip" --clobber
