@@ -236,6 +236,7 @@ func runSocks(path, config, bindIP, bindPort string) error {
 func handleScanner(scan *bufio.Scanner, bind string, st *procState) {
 	for scan.Scan() {
 		line := scan.Text()
+		lower := strings.ToLower(line)
 
 		if strings.Contains(line, "Connected to MASQUE server") {
 			st.mu.Lock()
@@ -248,7 +249,12 @@ func handleScanner(scan *bufio.Scanner, bind string, st *procState) {
 		}
 
 		if strings.Contains(line, "no recent network activity") {
-			logMsg("ERROR", "connection test failed", nil)
+			logMsg("INFO", "connection test failed", nil)
+			continue
+		}
+
+		if strings.Contains(line, "handshake failure") {
+			logMsg("INFO", "context deadline exceeded", nil)
 			continue
 		}
 
@@ -264,6 +270,11 @@ func handleScanner(scan *bufio.Scanner, bind string, st *procState) {
 			st.mu.Lock()
 			st.privateKeyErr = true
 			st.mu.Unlock()
+			continue
+		}
+
+		if strings.Contains(line, "error") {
+			logMsg("INFO", lower, nil)
 			continue
 		}
 	}
