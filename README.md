@@ -86,3 +86,4 @@ go build -o masque-plus.exe
 
 - This project uses [`usque`](https://github.com/Diniboy1123/usque) as the core MASQUE implementation.
 - MASQUE protocol and Cloudflare 1.1.1.1 inspired the functionality.
+- Development and code assistance were supported by ChatGPT.
