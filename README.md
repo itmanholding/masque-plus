@@ -79,7 +79,7 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 To build the binary locally (Windows example):
 
 ```bash
-go build -o masque-plus.exe main.go
+go build -o masque-plus.exe
 ```
 
 ## Credits
