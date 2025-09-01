@@ -1,0 +1,11 @@
+{
+    "name": "masque-plus",
+    "version": "1.0.0",
+    "description": "A simple Go launcher for `usque` that handles registration, configuration, and running a SOCKS proxy.  \r Designed for **Cloudflare MASQUE protocol** usage.",
+    "author": "IRCF",
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "^3.6.2",
+        "prettier-plugin-go-template": "^0.0.15"
+    }
+}

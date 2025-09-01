@@ -1,182 +1,182 @@
 name: Build masque-plus
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows
-            arch: amd64
-          - os: windows
-            arch: arm64
-          - os: darwin
-            arch: amd64
-          - os: darwin
-            arch: arm64
-          - os: linux
-            arch: amd64
-          - os: linux
-            arch: arm64
-          - os: linux
-            arch: armv7
-          - os: linux
-            arch: armv6
-          - os: linux
-            arch: armv5
-          - os: linux
-            arch: mips
-          - os: linux
-            arch: mipsle
-          - os: linux
-            arch: mips64
-          - os: linux
-            arch: mips64le
-          - os: android
-            arch: arm64
+    build:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: windows
+                      arch: amd64
+                    - os: windows
+                      arch: arm64
+                    - os: darwin
+                      arch: amd64
+                    - os: darwin
+                      arch: arm64
+                    - os: linux
+                      arch: amd64
+                    - os: linux
+                      arch: arm64
+                    - os: linux
+                      arch: armv7
+                    - os: linux
+                      arch: armv6
+                    - os: linux
+                      arch: armv5
+                    - os: linux
+                      arch: mips
+                    - os: linux
+                      arch: mipsle
+                    - os: linux
+                      arch: mips64
+                    - os: linux
+                      arch: mips64le
+                    - os: android
+                      arch: arm64
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "stable"
-          cache: true
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: 'stable'
+                  cache: true
 
-      - name: Setup tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip
-          YQ_VERSION=v4.44.3
-          curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
-          if ! command -v gh >/dev/null 2>&1; then
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt-get update
-            sudo apt-get install -y gh
-          fi
-          chmod +x scripts/fetch_usque.sh
+            - name: Setup tools
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y zip unzip
+                  YQ_VERSION=v4.44.3
+                  curl -sSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64
+                  chmod +x /usr/local/bin/yq
+                  if ! command -v gh >/dev/null 2>&1; then
+                    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+                    sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+                    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+                    sudo apt-get update
+                    sudo apt-get install -y gh
+                  fi
+                  chmod +x scripts/fetch_usque.sh
 
-      - name: Fetch usque
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}"
+            - name: Fetch usque
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  bash scripts/fetch_usque.sh "${{ matrix.os }}" "${{ matrix.arch }}"
 
-      - name: Build project (skip for android)
-        if: ${{ matrix.os != 'android' }}
-        run: |
-          mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
+            - name: Build project (skip for android)
+              if: ${{ matrix.os != 'android' }}
+              run: |
+                  mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
 
-          case "${{ matrix.os }}_${{ matrix.arch }}" in
-            windows_amd64)
-              CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
-              ;;
-            windows_arm64)
-              CGO_ENABLED=0 GOOS=windows GOARCH=arm64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
-              ;;
-            darwin_amd64)
-              CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            darwin_arm64)
-              CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_amd64)
-              CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_arm64)
-              CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_armv5)
-              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_armv6)
-              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_armv7)
-              CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_mips)
-              CGO_ENABLED=0 GOOS=linux GOARCH=mips \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_mipsle)
-              CGO_ENABLED=0 GOOS=linux GOARCH=mipsle \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_mips64)
-              CGO_ENABLED=0 GOOS=linux GOARCH=mips64 \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            linux_mips64le)
-              CGO_ENABLED=0 GOOS=linux GOARCH=mips64le \
-              go build -trimpath -ldflags="-s -w" \
-              -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
-              ;;
-            *)
-              echo "unsupported target: ${{ matrix.os }}_${{ matrix.arch }}"; exit 1
-              ;;
-          esac
+                  case "${{ matrix.os }}_${{ matrix.arch }}" in
+                    windows_amd64)
+                      CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
+                      ;;
+                    windows_arm64)
+                      CGO_ENABLED=0 GOOS=windows GOARCH=arm64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus.exe .
+                      ;;
+                    darwin_amd64)
+                      CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    darwin_arm64)
+                      CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_amd64)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_arm64)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_armv5)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=5 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_armv6)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=6 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_armv7)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_mips)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=mips \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_mipsle)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=mipsle \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_mips64)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=mips64 \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    linux_mips64le)
+                      CGO_ENABLED=0 GOOS=linux GOARCH=mips64le \
+                      go build -trimpath -ldflags="-s -w" \
+                      -o build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/masque-plus .
+                      ;;
+                    *)
+                      echo "unsupported target: ${{ matrix.os }}_${{ matrix.arch }}"; exit 1
+                      ;;
+                  esac
 
-      - name: Prepare package directory (android)
-        if: ${{ matrix.os == 'android' }}
-        run: |
-          mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
+            - name: Prepare package directory (android)
+              if: ${{ matrix.os == 'android' }}
+              run: |
+                  mkdir -p build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
 
-      - name: Bundle usque binary into package
-        run: |
-          cp build/vendor/usque/${{ matrix.os }}_${{ matrix.arch }}/* build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
+            - name: Bundle usque binary into package
+              run: |
+                  cp build/vendor/usque/${{ matrix.os }}_${{ matrix.arch }}/* build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}/
 
-      - name: Create flat zip per target
-        run: |
-          mkdir -p build/out
-          cd build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
-          zip -r ../../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip .
+            - name: Create flat zip per target
+              run: |
+                  mkdir -p build/out
+                  cd build/masque-plus/${{ matrix.os }}_${{ matrix.arch }}
+                  zip -r ../../out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip .
 
-      - name: Upload to GitHub Draft Release on tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          if ! gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release create "${TAG}" --draft --title "${TAG}" \
-              --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
-          else
-            gh release edit "${TAG}" --draft \
-              --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
-          fi
-          gh release upload "${TAG}" "build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip" --clobber
+            - name: Upload to GitHub Draft Release on tag
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  TAG="${GITHUB_REF#refs/tags/}"
+                  if ! gh release view "${TAG}" >/dev/null 2>&1; then
+                    gh release create "${TAG}" --draft --title "${TAG}" \
+                      --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
+                  else
+                    gh release edit "${TAG}" --draft \
+                      --notes "$(printf '## Changelog\nAutomated draft release for %s\n\n- [x] Some Small Fixes\n' "${TAG}")"
+                  fi
+                  gh release upload "${TAG}" "build/out/masque-plus-${{ matrix.os }}_${{ matrix.arch }}.zip" --clobber

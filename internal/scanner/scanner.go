@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quic-go/quic-go"
 	"masque-plus/internal/logutil"
+
+	"github.com/quic-go/quic-go"
 )
 
 var defaultScanPerIPTimeout = 3 * time.Second

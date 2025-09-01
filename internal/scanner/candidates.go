@@ -4,15 +4,16 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math/rand"
 	"net"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
-	"math/rand"
+
+	"masque-plus/internal/logutil"
 
 	"github.com/quic-go/quic-go"
-	"masque-plus/internal/logutil"
 )
 
 // IP version selector

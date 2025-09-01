@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/proxy"
 	"masque-plus/internal/logutil"
+
+	"golang.org/x/net/proxy"
 )
 
 // ResultStatus is the final outcome of the check.

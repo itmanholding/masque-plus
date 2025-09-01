@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	mrand "math/rand"
 	"math/big"
+	mrand "math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
+	"masque-plus/internal/httpcheck"
 	"masque-plus/internal/logutil"
 	"masque-plus/internal/scanner"
-	"masque-plus/internal/httpcheck"
 )
 
 var (
