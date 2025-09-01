@@ -67,6 +67,7 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 ## TODO
 
 ✅ Add an internal endpoint scanner to automatically search and suggest optimal MASQUE endpoints.
+
 ⬜ Planning to add the `MasqueInMasque` method to get an IP from a different location.
 
 ## Notes
