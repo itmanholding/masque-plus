@@ -234,7 +234,15 @@ func main() {
 // ------------------------ Helpers ------------------------
 
 func buildCandidatesFromFlags(v6, v4 bool, r4csv, r6csv string) []string {
-    ports := []string{"443"} // for now fixed to 443; later add more like {"443","8443","2053"}
+    ports := []string{
+		"443",
+		//"500",
+		//"1701",
+		//"4500",
+		//"4443",
+		//"8443",
+		//"8095",
+	}
 
     var r4, r6 []string
     if strings.TrimSpace(r4csv) != "" {
