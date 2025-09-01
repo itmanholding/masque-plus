@@ -38,6 +38,11 @@ func TryCandidates(
 	}
 
 	for i := 0; i < maxToTry; i++ {
+		
+		if i < maxToTry-1 {
+			time.Sleep(1 * time.Second)
+		}
+		
 		ep := candidates[i]
 		logutil.Info("candidate", map[string]string{"endpoint": ep, "idx": fmt.Sprint(i + 1), "of": fmt.Sprint(maxToTry)})
 
