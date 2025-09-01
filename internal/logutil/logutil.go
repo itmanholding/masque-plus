@@ -3,10 +3,13 @@ package logutil
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
 )
+
+var timePattern = regexp.MustCompile(`(\d{4}[-/]\d{2}[-/]\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?)`)
 
 // Msg logs a line in key=value style, e.g.:
 // time=2025-09-01T11:09:07.942+03:30 level=INFO msg="serving proxy" address=127.0.0.1:8086
@@ -15,6 +18,9 @@ func Msg(lvl string, msg string, kv map[string]string) {
 	if kv == nil {
 		kv = map[string]string{}
 	}
+
+	msg = timePattern.ReplaceAllString(msg, "")
+	msg = strings.TrimSpace(msg)
 
 	ts := time.Now().Format(time.RFC3339Nano)
 
