@@ -1,9 +1,11 @@
+
 package main
 
 import (
 	"bufio"
 	"crypto/rand"
 	"encoding/json"
+      
 	"flag"
 	"fmt"
 	"math/big"
@@ -71,9 +73,20 @@ func main() {
 	_ = dns
 	_ = defaultTestURL // silence unused if not used elsewhere
 
+
+
+        if *endpoint == "" && !*scan {
+		if st, err := LoadState(); err == nil {
+			fmt.Println("Loading previous state...")
+			*endpoint = st.Endpoint
+			*bind = st.Socks
+		}
+	}
+
 	if *v4Flag && *v6Flag {
 		logErrorAndExit("both -4 and -6 provided")
 	}
+
 	if *endpoint == "" && !*scan {
 		logErrorAndExit("--endpoint is required")
 	}
@@ -224,6 +237,10 @@ func main() {
 	if err := writeConfig(configFile, cfg); err != nil {
 		logErrorAndExit(fmt.Sprintf("failed to write config: %v", err))
 	}
+SaveState(State{
+		Endpoint: *endpoint,
+		Socks:    fmt.Sprintf("%s:%s", bindIP, bindPort),
+	})
 
 	// Final SOCKS run (not scanning); keep child logs on and tolerate up to 3 tunnel fails
 	if err := runSocks(usquePath, configFile, bindIP, bindPort, *connectTimeout); err != nil {
