@@ -74,7 +74,7 @@ Place the `usque` binary in the same folder as this launcher (`Masque-Plus.exe` 
 - Make sure the `usque` binary has execution permissions (`chmod +x usque` on Linux/macOS).
 - Configurations are saved in `config.json` in the same folder.
 - If a private key error occurs, the launcher will attempt to re-register `usque` automatically.
-- If you run it the first time, you don't need to give all the commands, i.e. clean IPs, etc...., for subsequent times. Enter the folder in CMD, as before, this time just run the "masque-plus.exe" execution file.
+- If you run it the first time, you don't need to give all the commands, Endpoint...., for subsequent times. Enter the folder in CMD, as before, this time just run the "masque-plus.exe" execution file.
 
 ## For Developers
 
